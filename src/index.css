@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.delete-btn {
+  display: none;
+}
+
+.todo:hover {
+  .delete-btn {
+    display: block;
+  }
+
+  .description {
+    display: block;
+  }
+
+  .date-create {
+    display: none;
+  }
+}
