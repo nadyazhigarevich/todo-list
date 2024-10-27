@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from "uuid"
 import Chance from "chance"
 import Form from "./components/Form"
 import Todos from "./components/Todos"
+import Filters from "./components/Filters" 
 
 const chance = new Chance()
 
@@ -16,6 +17,27 @@ class App extends React.Component {
       search: "",
       severityFilter: [],
     }
+
+    this.filters = [
+      (todo) => {
+        const { search } = this.state
+        const searchLower = search.toLowerCase()
+        return (
+          todo.title.toLowerCase().includes(searchLower) ||
+          todo.body.toLowerCase().includes(searchLower)
+        )
+      },
+      (todo) => {
+        const { severityFilter } = this.state
+        return (
+          severityFilter.length === 0 || severityFilter.includes(todo.severity)
+        )
+      },
+      (todo) => {
+        const { isFiltered } = this.state
+        return !isFiltered || !todo.checked
+      },
+    ]
   }
 
   handleTodoAdd = (title, body, severity) => {
@@ -69,10 +91,10 @@ class App extends React.Component {
   handleSeverityFilter = (e) => {
     const { value, checked } = e.target
 
-    this.setState(prevState => ({
+    this.setState((prevState) => ({
       severityFilter: checked
         ? [...prevState.severityFilter, value]
-        : prevState.severityFilter.filter(severity => severity !== value)
+        : prevState.severityFilter.filter((severity) => severity !== value),
     }))
   }
 
@@ -84,19 +106,14 @@ class App extends React.Component {
   }
 
   filterTodos = () => {
-    const { todos, search, severityFilter, isFiltered } = this.state
-    return todos.filter(todo => {
-      const searchLower = search.toLowerCase()
-      const matchesSearch = todo.title.toLowerCase().includes(searchLower) ||
-        todo.body.toLowerCase().includes(searchLower)
-      const matchesSeverity = severityFilter.length === 0 || severityFilter.includes(todo.severity)
-      return matchesSearch && matchesSeverity && (!isFiltered || !todo.checked)
-    })
+    const { todos } = this.state
+    return todos.filter((todo) => this.filters.every((filter) => filter(todo)))
   }
 
   render() {
     const { todos } = this.state
     const filteredTodos = this.filterTodos()
+    const severities = ["low", "medium", "high"] 
 
     return (
       <div className="flex flex-col items-center">
@@ -104,10 +121,12 @@ class App extends React.Component {
         <Form
           todos={todos}
           onTodoAdd={this.handleTodoAdd}
-          onFilter={this.handleFilter}
-          onSearch={this.handleSearch}
-          onSeverityFilter={this.handleSeverityFilter}
           onGenerateMockTodos={this.generateMockTodos}
+        />
+        <Filters
+          severities={severities}
+          onSeverityFilter={this.handleSeverityFilter}
+          onFilter={this.handleFilter}
         />
         {todos.length > 0 && filteredTodos.length === 0 ? (
           <p className="mt-4 text-red-500">There are no results.</p>
